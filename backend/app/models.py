@@ -2,7 +2,7 @@
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
-from .database import Base
+from app.database import Base
 
 class Club(Base):
     __tablename__ = "clubs"
