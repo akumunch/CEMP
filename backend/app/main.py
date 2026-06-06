@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
 from . import models
+from .routers import clubs, events, registrations
 
 Base.metadata.create_all(bind=engine)
 
@@ -19,6 +20,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(clubs.router)
+app.include_router(events.router)
+app.include_router(registrations.router)
 
 @app.get("/", tags=["Health"]) #tags is for grouping the end points together in Swagger ui
 async def health_check():
