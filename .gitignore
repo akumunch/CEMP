@@ -14,3 +14,5 @@ out/
 build/
 .DS_Store
 *.local
+
+docs.docx
