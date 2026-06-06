@@ -35,3 +35,15 @@ def register_for_event(registration: schemas.RegistrationCreate, db: Session = D
     db.commit()
     db.refresh(new_reg)
     return new_reg
+
+@router.get("/", response_model=list[schemas.RegistrationResponse])
+def get_all_registrations(db: Session = Depends(get_db)):
+    return db.query(models.Registration).all()
+
+@router.delete("/{registration_id}", status_code=status.HTTP_204_NO_CONTENT)
+def cancel_registration(registration_id: int, db: Session = Depends(get_db)):
+    reg = db.query(models.Registration).filter(models.Registration.id == registration_id).first()
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registration not found.")
+    db.delete(reg)
+    db.commit()

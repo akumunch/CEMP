@@ -16,6 +16,21 @@ def club_payload(name="CodeChef Club"):
     }
 
 
+def updated_club_payload():
+    payload = club_payload(name="Updated CodeChef Club")
+    payload.update(
+        {
+            "description": "Updated club description.",
+            "president_name": "Updated President",
+            "vp_name": "Updated VP",
+            "gen_sec_name": "Updated General Secretary",
+            "contact_email": "updated.codechef@example.com",
+            "leads": [{"name": "Ignored Lead", "department": "Operations"}],
+        }
+    )
+    return payload
+
+
 def create_club(client, name="CodeChef Club"):
     response = client.post("/api/clubs/", json=club_payload(name=name))
     assert response.status_code == 201
@@ -37,6 +52,16 @@ def create_event(client, club_id, title="Weekly Cook-Off"):
     response = client.post("/api/events/", json=event_payload(club_id, title=title))
     assert response.status_code == 201
     return response.json()
+
+
+def updated_event_payload(club_id):
+    return {
+        "title": "Updated Cook-Off",
+        "description": "Updated contest details.",
+        "date": (datetime.now(timezone.utc) + timedelta(days=14)).isoformat(),
+        "location": "Seminar Hall",
+        "club_id": club_id,
+    }
 
 
 def registration_payload(event_id, student_reg="22BCE1001"):
@@ -90,6 +115,63 @@ def test_get_all_clubs(client):
     assert [club["id"] for club in response.json()] == [first["id"], second["id"]]
 
 
+def test_get_club_by_id(client):
+    club = create_club(client)
+
+    response = client.get(f"/api/clubs/{club['id']}")
+
+    assert response.status_code == 200
+    assert response.json()["id"] == club["id"]
+    assert response.json()["name"] == "CodeChef Club"
+
+
+def test_get_missing_club_returns_404(client):
+    response = client.get("/api/clubs/999")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Club not found."
+
+
+def test_update_club(client):
+    club = create_club(client)
+
+    response = client.put(f"/api/clubs/{club['id']}", json=updated_club_payload())
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id"] == club["id"]
+    assert body["name"] == "Updated CodeChef Club"
+    assert body["description"] == "Updated club description."
+    assert body["president_name"] == "Updated President"
+    assert body["contact_email"] == "updated.codechef@example.com"
+    assert len(body["leads"]) == 2
+
+
+def test_update_missing_club_returns_404(client):
+    response = client.put("/api/clubs/999", json=updated_club_payload())
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Club not found."
+
+
+def test_delete_club(client):
+    club = create_club(client)
+
+    delete_response = client.delete(f"/api/clubs/{club['id']}")
+    get_response = client.get(f"/api/clubs/{club['id']}")
+
+    assert delete_response.status_code == 204
+    assert delete_response.content == b""
+    assert get_response.status_code == 404
+
+
+def test_delete_missing_club_returns_404(client):
+    response = client.delete("/api/clubs/999")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Club not found."
+
+
 def test_create_event_for_existing_club(client):
     club = create_club(client)
 
@@ -118,6 +200,70 @@ def test_get_all_events(client):
 
     assert response.status_code == 200
     assert [event["id"] for event in response.json()] == [first["id"], second["id"]]
+
+
+def test_get_event_by_id(client):
+    club = create_club(client)
+    event = create_event(client, club["id"])
+
+    response = client.get(f"/api/events/{event['id']}")
+
+    assert response.status_code == 200
+    assert response.json()["id"] == event["id"]
+    assert response.json()["title"] == "Weekly Cook-Off"
+
+
+def test_get_missing_event_returns_404(client):
+    response = client.get("/api/events/999")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Event not found."
+
+
+def test_update_event(client):
+    club = create_club(client)
+    event = create_event(client, club["id"])
+
+    response = client.put(
+        f"/api/events/{event['id']}",
+        json=updated_event_payload(club["id"]),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id"] == event["id"]
+    assert body["title"] == "Updated Cook-Off"
+    assert body["description"] == "Updated contest details."
+    assert body["location"] == "Seminar Hall"
+    assert body["club_id"] == club["id"]
+
+
+def test_update_missing_event_returns_404(client):
+    club = create_club(client)
+
+    response = client.put("/api/events/999", json=updated_event_payload(club["id"]))
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Event not found."
+
+
+def test_delete_event(client):
+    club = create_club(client)
+    event = create_event(client, club["id"])
+
+    delete_response = client.delete(f"/api/events/{event['id']}")
+    get_response = client.get(f"/api/events/{event['id']}")
+
+    assert delete_response.status_code == 204
+    assert delete_response.content == b""
+    assert get_response.status_code == 404
+
+
+def test_delete_missing_event_returns_404(client):
+    response = client.delete("/api/events/999")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Event not found."
 
 
 def test_register_for_event(client):
@@ -173,3 +319,49 @@ def test_allows_same_student_registration_for_different_events(client):
 
     assert first_response.status_code == 201
     assert second_response.status_code == 201
+
+
+def test_get_all_registrations(client):
+    club = create_club(client)
+    first_event = create_event(client, club["id"], title="Weekly Cook-Off")
+    second_event = create_event(client, club["id"], title="Debug Duel")
+    first = client.post(
+        "/api/registrations/",
+        json=registration_payload(first_event["id"], student_reg="22BCE1001"),
+    ).json()
+    second = client.post(
+        "/api/registrations/",
+        json=registration_payload(second_event["id"], student_reg="22BCE1002"),
+    ).json()
+
+    response = client.get("/api/registrations/")
+
+    assert response.status_code == 200
+    assert [registration["id"] for registration in response.json()] == [
+        first["id"],
+        second["id"],
+    ]
+
+
+def test_cancel_registration(client):
+    club = create_club(client)
+    event = create_event(client, club["id"])
+    registration = client.post(
+        "/api/registrations/",
+        json=registration_payload(event["id"]),
+    ).json()
+
+    delete_response = client.delete(f"/api/registrations/{registration['id']}")
+    list_response = client.get("/api/registrations/")
+
+    assert delete_response.status_code == 204
+    assert delete_response.content == b""
+    assert list_response.status_code == 200
+    assert list_response.json() == []
+
+
+def test_cancel_missing_registration_returns_404(client):
+    response = client.delete("/api/registrations/999")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Registration not found."

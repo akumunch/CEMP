@@ -42,3 +42,29 @@ def create_club(club: schemas.ClubCreate, db: Session = Depends(get_db)):
 @router.get("/", response_model=List[schemas.ClubResponse])
 def get_all_clubs(db: Session = Depends(get_db)):
     return db.query(models.Club).all()
+
+@router.get("/{club_id}", response_model=schemas.ClubResponse)
+def get_club(club_id: int, db: Session = Depends(get_db)):
+    club = db.query(models.Club).filter(models.Club.id == club_id).first()
+    if not club:
+        raise HTTPException(status_code=404, detail="Club not found.")
+    return club
+
+@router.put("/{club_id}", response_model=schemas.ClubResponse)
+def update_club(club_id: int, club: schemas.ClubCreate, db: Session = Depends(get_db)):
+    db_club = db.query(models.Club).filter(models.Club.id == club_id).first()
+    if not db_club:
+        raise HTTPException(status_code=404, detail="Club not found.")
+    for key, value in club.model_dump(exclude={"leads"}).items():
+        setattr(db_club, key, value)
+    db.commit()
+    db.refresh(db_club)
+    return db_club
+
+@router.delete("/{club_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_club(club_id: int, db: Session = Depends(get_db)):
+    db_club = db.query(models.Club).filter(models.Club.id == club_id).first()
+    if not db_club:
+        raise HTTPException(status_code=404, detail="Club not found.")
+    db.delete(db_club)
+    db.commit()
