@@ -2,6 +2,14 @@
 
 A full-stack web application for managing campus clubs, events, and student registrations.
 
+## Features
+
+- Create, update, and delete clubs, including their office bearers and leads
+- Create and manage events for each club
+- Student registration for events, with duplicate registrations blocked at the database level
+- 13 REST endpoints with auto-generated Swagger docs
+- Backend test suite with pytest
+
 ---
 
 ## Tech Stack
@@ -31,7 +39,7 @@ A full-stack web application for managing campus clubs, events, and student regi
 
 ### 1. Clone the repository
 ```bash
-git clone <https://github.com/akumunch/CEMP>
+git clone https://github.com/akumunch/CEMP.git
 cd CEMP
 ```
 
@@ -45,11 +53,12 @@ docker run --name cemp-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgre
 cd backend
 python -m venv venv
 venv\Scripts\activate        # Windows
+# source venv/bin/activate   # macOS / Linux
 pip install -r requirements.txt
 python -m uvicorn app.main:app --reload
 ```
 
-Backend runs at: `http://localhost:8000`  
+Backend runs at: `http://localhost:8000`
 Swagger docs at: `http://localhost:8000/docs`
 
 ### 4. Frontend setup
@@ -111,7 +120,7 @@ python -m pytest backend/tests
 | registered_at | DateTime | Auto (UTC) |
 | event_id | Integer | FK → events.id |
 
-> Unique constraint on `(student_reg, event_id)` — prevents duplicate registrations.
+> Unique constraint on `(student_reg, event_id)` prevents duplicate registrations.
 
 ---
 
@@ -158,7 +167,7 @@ python -m pytest backend/tests
   "president_name": "Alice",
   "vp_name": "Bob",
   "gen_sec_name": "Carol",
-  "contact_email": "codechef@vitc.edu",
+  "contact_email": "codechef.vitc@example.com",
   "leads": [
     { "name": "Dave", "department": "CSE" }
   ]
@@ -168,12 +177,12 @@ python -m pytest backend/tests
 ```json
 {
   "id": 1,
-  "name": "CodeChef SRM",
+  "name": "CodeChef VIT Chennai",
   "description": "Competitive programming club.",
   "president_name": "Alice",
   "vp_name": "Bob",
   "gen_sec_name": "Carol",
-  "contact_email": "codechef@srm.edu",
+  "contact_email": "codechef.vitc@example.com",
   "leads": [
     { "id": 1, "name": "Dave", "department": "CSE", "club_id": 1 }
   ],
@@ -185,10 +194,10 @@ python -m pytest backend/tests
 **POST** `/api/events/`
 ```json
 {
-  "title": "Hackathon 2025",
+  "title": "Hackathon 2026",
   "description": "24-hour coding contest.",
-  "date": "2025-08-15T09:00:00",
-  "location": "Tech Park Auditorium",
+  "date": "2026-08-15T09:00:00",
+  "location": "Academic Block 1 Auditorium",
   "club_id": 1
 }
 ```
@@ -196,10 +205,10 @@ python -m pytest backend/tests
 ```json
 {
   "id": 1,
-  "title": "Hackathon 2025",
+  "title": "Hackathon 2026",
   "description": "24-hour coding contest.",
-  "date": "2025-08-15T09:00:00",
-  "location": "Tech Park Auditorium",
+  "date": "2026-08-15T09:00:00",
+  "location": "Academic Block 1 Auditorium",
   "club_id": 1
 }
 ```
@@ -209,7 +218,7 @@ python -m pytest backend/tests
 ```json
 {
   "student_name": "John Doe",
-  "student_email": "john@srm.edu",
+  "student_email": "john.doe@example.com",
   "student_reg": "24BCEXXXX",
   "event_id": 1
 }
@@ -219,10 +228,10 @@ python -m pytest backend/tests
 {
   "id": 1,
   "student_name": "John Doe",
-  "student_email": "john@srm.edu",
+  "student_email": "john.doe@example.com",
   "student_reg": "24BCEXXXX",
   "event_id": 1,
-  "registered_at": "2025-06-06T10:30:00Z"
+  "registered_at": "2026-08-01T10:30:00Z"
 }
 ```
 
@@ -246,4 +255,4 @@ python -m pytest backend/tests
 
 ## Deployment
 
-Not deployed. To run locally, follow the setup instructions above.
+Not deployed yet. To run locally, follow the setup instructions above.
